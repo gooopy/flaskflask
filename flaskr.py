@@ -65,18 +65,21 @@ def modify_success():
 	flash(request.form['id'])
 	return redirect(url_for('show_entries'))
 
-@app.route('/modify_entry', methods = ['POST'])
-def modify_entry():
+@app.route('/modify_entry/<int:entry_id>')
+def modify_entry(entry_id):
 	if not session.get('logged_in'):
 		abort(401)
-	return render_template('modify.html', title=request.form['title'], text=request.form['text'], id=request.form['id'])
+	cur = g.db.execute('select id, title, text from entries where id = ?', [entry_id])
+	row = cur.fetchall()[0]
+	entry = dict(id=row[0], title=row[1], text=row[2])
+	return render_template('modify.html', entry=entry)
 
 
-@app.route('/delete_entry', methods = ['POST'])
-def delete_entry():
+@app.route('/delete_entry/<int:entry_id>')
+def delete_entry(entry_id):
 	if not session.get('logged_in'):
 		abort(401)
-	g.db.execute('DELETE FROM entries WHERE id=?', [request.form['id']])
+	g.db.execute('DELETE FROM entries WHERE id=?', [entry_id])
 	g.db.commit()
 	flash('This Entry was successfully deleted')
 	return redirect(url_for('show_entries'))

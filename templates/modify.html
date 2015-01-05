@@ -4,10 +4,10 @@
     <form action="{{ url_for('modify_success') }}" method='post' class='modifysuccess-entry'>
       <dl>
         <dt>Title:
-        <dd><input type='text' size=30 name='title' value= {{ title }}>
+        <dd><input type='text' size=30 name='title' value= {{ entry.title }}>
         <dt>Text:
-        <dd><textarea name='text' rows=5 cols=40> {{ text }}</textarea>
-        <dd><input type='hidden' name='id' value = {{ id }}>
+        <dd><textarea name='text' rows=5 cols=40> {{ entry.text }}</textarea>
+        <dd><input type='hidden' name='id' value = {{ entry.id }}>
         <dd><input type='submit' value=Modify>
       </dl>
     </form>

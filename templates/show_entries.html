@@ -11,22 +11,11 @@
       </dl>
     </form>
   {% endif %}
-  
+
   <ul class=entries>
   {% for entry in entries %}
-    <li><h2>{{ entry.title }}</h2>
-    {{ entry.text|safe }}
-    <form action = "{{ url_for('modify_entry') }}" method=POST class=modify-entry>
-      <input type = 'hidden' name = 'title' value = '{{ entry.title }}'>
-      <input type = 'hidden' name = 'text' value = '{{ entry.text }}'>
-      <input type = 'hidden' name = 'id' value = '{{ entry.id }}'>
-    	<input type='submit' value='modify'>
-    </form>
-    <form action = "{{ url_for('delete_entry') }}" method=POST class=delete-entry>
-      <input type = 'hidden' name = 'id' value = '{{ entry.id }}'>
-      <input type = 'submit' value = 'delete'>
-    </form>
-    
+    <li><h2>{{ entry.title }}</h2></li>
+    <p>{{ entry.text|safe }}</p>
   {% else %}
     <li><em>Unbelievable.  No entries here so far</em>
   {% endfor %}
