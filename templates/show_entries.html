@@ -7,20 +7,31 @@
         <dd><input type='text' size=30 name='title'>
         <dt>Text:
         <dd><textarea name='text' rows=5 cols=40></textarea>
+        <dd><input type='hidden' value = {{ session['logged_id'] }} name='writer'>
         <dd><input type='submit' value=Share>
+
       </dl>
     </form>
-  {% endif %}
+  
 
   <ul class=entries>
   {% for entry in entries %}
+    {% if session['logged_id'] == entry.writer %}
     <li><h2>{{ entry.title }}</h2></li>
     <a href="{{ url_for('delete_entry', entry_id=entry.id) }}">Delete</a>
     <a href="{{ url_for('modify_entry', entry_id=entry.id) }}">Modify</a>
     <p>{{ entry.text|safe }}</p>
+    <p>Written by. {{ entry.writer }}</p>
+    {% endif %}
   {% else %}
     <li><em>Unbelievable.  No entries here so far</em>
   {% endfor %}
   </ul>
+
+  {% endif %}
+
+  {% if not session.logged_in %}
+  <h1> PLEASE LOG IN!!!!! </h1>
+  {% endif %}
 
 {% endblock %}

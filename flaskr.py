@@ -39,16 +39,16 @@ def teardown_request(exception):
 
 @app.route('/')
 def show_entries():
-	cur = g.db.execute('select id, title, text from entries order by id desc')
-	entries = [dict(id=row[0], title=row[1], text=row[2]) for row in cur.fetchall()]
+	cur = g.db.execute('select id, title, text, writer from entries order by id desc')
+	entries = [dict(id=row[0], title=row[1], text=row[2], writer=row[3]) for row in cur.fetchall()]
 	return render_template('show_entries.html', entries=entries)
 
 @app.route('/add', methods = ['POST'])
 def add_entry():
 	if not session.get('logged_in'):
 		abort(401)
-	g.db.execute('insert into entries (title, text) values (?, ?)',
-					[request.form['title'], request.form['text']])
+	g.db.execute('insert into entries (title, text, writer) values (?, ?, ?)',
+					[request.form['title'], request.form['text'], request.form['writer']])
 	g.db.commit()
 	flash('New entry was successfully posted')
 	return redirect(url_for('show_entries'))
@@ -121,8 +121,7 @@ def login():
 				session['logged_in'] = True
 				session['logged_id'] = member['userid']
 				flash('You were logged in')
-				return render_template('show_entries.html', userid=member['userid'])
-				#return redirect(url_for('show_entries'))
+				return redirect(url_for('show_entries'))
 	return render_template('login.html', error=error)
 
 
