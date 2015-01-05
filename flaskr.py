@@ -85,6 +85,24 @@ def delete_entry(entry_id):
 	return redirect(url_for('show_entries'))
 
 
+@app.route('/signup', methods = ['GET', 'POST'])
+def signup_member():
+	error = None
+	if request.method == 'POST':
+		if request.form['password'] != request.form['password_check']:
+			error = 'Two passwords are Different'
+		else:
+			g.db.execute('insert into members (userid, password, nickname) values (?, ?, ?)',
+					[request.form['userid'], request.form['password'], request.form['nickname']])
+			g.db.commit()
+			flash('WELCOME')
+			print '?'
+			return redirect(url_for('show_entries'))
+
+	return render_template('signup.html', error=error)
+
+
+
 @app.route('/login', methods = ['GET', 'POST'])
 def login():
 	error = None
