@@ -1,13 +1,10 @@
 from __future__ import with_statement
 from contextlib import closing
 
-
 # all the imports
 import sqlite3
 from flask import Flask, request, session, g, redirect, url_for, \
 	abort, render_template, flash
-
-
 
 #configuration
 DATABASE = '/tmp/flaskr.db'
@@ -21,7 +18,9 @@ app = Flask(__name__)
 app.config.from_object(__name__)
 
 def connect_db():
-	return sqlite3.connect(app.config['DATABASE'])
+	db = sqlite3.connect(app.config['DATABASE'])
+	db.row_factory = sqlite3.Row
+	return db
 
 def init_db():
 	with closing(connect_db()) as db:
@@ -29,27 +28,40 @@ def init_db():
 			db.cursor().executescript(f.read())
 		db.commit()
 
-@app.before_request
-def before_request():
-	g.db = connect_db()
+def make_dicts(cursor, row):
+    return dict((cursor.description[idx][0], value)
+                for idx, value in enumerate(row))
+
+def get_db():
+	db = getattr(g, '_db', None)
+	if db == None:
+		db = g._db = connect_db()
+	return db
+
+def query_db(query, args=(), one=False):
+	db = get_db()
+	cur = db.execute(query, args)
+	rv = cur.fetchall()
+	db.commit()
+	cur.close()
+	return (rv[0] if rv else None) if one else rv
 
 @app.teardown_request
 def teardown_request(exception):
-	g.db.close()
+	db = getattr(g, '_db', None)
+	if db != None:
+		db.close()
 
 @app.route('/')
 def show_entries():
-	cur = g.db.execute('select id, title, text, writer from entries order by id desc')
-	entries = [dict(id=row[0], title=row[1], text=row[2], writer=row[3]) for row in cur.fetchall()]
+	entries = query_db('select id, title, text from entries order by id desc')
 	return render_template('show_entries.html', entries=entries)
 
 @app.route('/add', methods = ['POST'])
 def add_entry():
 	if not session.get('logged_in'):
 		abort(401)
-	g.db.execute('insert into entries (title, text, writer) values (?, ?, ?)',
-					[request.form['title'], request.form['text'], request.form['writer']])
-	g.db.commit()
+	query_db('insert into entries (title, text) values (?, ?)', [request.form['title'], request.form['text']])
 	flash('New entry was successfully posted')
 	return redirect(url_for('show_entries'))
 
@@ -58,9 +70,9 @@ def add_entry():
 def modify_success():
 	if not session.get('logged_in'):
 		abort(401)
-	g.db.execute('UPDATE entries SET title=? WHERE id=?', [request.form['title'], request.form['id']])
-	g.db.execute('UPDATE entries SET text=? WHERE id=?', [request.form['text'], request.form['id']])
-	g.db.commit()
+	query_db('UPDATE entries SET title=? WHERE id=?', [request.form['title'], request.form['id']])
+	query_db('UPDATE entries SET text=? WHERE id=?', [request.form['text'], request.form['id']])
+
 	flash('This Entry was successfully modified')
 	flash(request.form['id'])
 	return redirect(url_for('show_entries'))
@@ -69,9 +81,7 @@ def modify_success():
 def modify_entry(entry_id):
 	if not session.get('logged_in'):
 		abort(401)
-	cur = g.db.execute('select id, title, text from entries where id = ?', [entry_id])
-	row = cur.fetchall()[0]
-	entry = dict(id=row[0], title=row[1], text=row[2])
+	entry = query_db('select id, title, text from entries where id = ?', [entry_id], one=True)
 	return render_template('modify.html', entry=entry)
 
 
@@ -79,8 +89,8 @@ def modify_entry(entry_id):
 def delete_entry(entry_id):
 	if not session.get('logged_in'):
 		abort(401)
-	g.db.execute('DELETE FROM entries WHERE id=?', [entry_id])
-	g.db.commit()
+	query_db('DELETE FROM entries WHERE id=?', [entry_id])
+
 	flash('This Entry was successfully deleted')
 	return redirect(url_for('show_entries'))
 
@@ -92,14 +102,13 @@ def signup_member():
 		if request.form['password'] != request.form['password_check']:
 			error = 'Two passwords are Different'
 		else:
-			g.db.execute('insert into members (userid, password, nickname) values (?, ?, ?)',
+			query_db('insert into members (userid, password, nickname) values (?, ?, ?)',
 					[request.form['userid'], request.form['password'], request.form['nickname']])
-			g.db.commit()
+
 			flash('WELCOME')
 			return redirect(url_for('show_entries'))
 
 	return render_template('signup.html', error=error)
-
 
 
 @app.route('/login', methods = ['GET', 'POST'])
@@ -107,14 +116,10 @@ def login():
 	error = None
 	if request.method == 'POST':
 		print request.form['userid']
-		cur = g.db.execute('SELECT userid, password, nickname FROM members WHERE userid=?', [request.form['userid']])
-		rows = cur.fetchall()
-		if len(rows) == 0 :
+		member = query_db('SELECT userid, password, nickname FROM members WHERE userid=?', [request.form['userid']], one=True)
+		if member == None:
 			error = 'Invalid ID'
-		else :
-			row = rows[0]
-			member = dict(userid=row[0], password=row[1], nickname=row[2])
-
+		else:
 			if request.form['password'] != member['password']:
 				error = 'Invalid password'
 			else:
@@ -122,8 +127,8 @@ def login():
 				session['logged_id'] = member['userid']
 				flash('You were logged in')
 				return redirect(url_for('show_entries'))
-	return render_template('login.html', error=error)
 
+	return render_template('login.html', error=error)
 
 
 @app.route('/logout')
@@ -132,7 +137,5 @@ def logout():
 	flash('You were logged out')
 	return redirect(url_for('show_entries'))
 
-
-#@app.route('')
 if __name__ == '__main__':
 	app.run()
