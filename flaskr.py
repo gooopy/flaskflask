@@ -96,7 +96,6 @@ def signup_member():
 					[request.form['userid'], request.form['password'], request.form['nickname']])
 			g.db.commit()
 			flash('WELCOME')
-			print '?'
 			return redirect(url_for('show_entries'))
 
 	return render_template('signup.html', error=error)
@@ -107,14 +106,23 @@ def signup_member():
 def login():
 	error = None
 	if request.method == 'POST':
-		if request.form['username'] != app.config['USERNAME']:
-			error = 'Invalid username'
-		elif request.form['password'] != app.config['PASSWORD']:
-			error = 'Invalid password'
-		else:
-			session['logged_in'] = True
-			flash('You were logged in')
-			return redirect(url_for('show_entries'))
+		print request.form['userid']
+		cur = g.db.execute('SELECT userid, password, nickname FROM members WHERE userid=?', [request.form['userid']])
+		rows = cur.fetchall()
+		if len(rows) == 0 :
+			error = 'Invalid ID'
+		else :
+			row = rows[0]
+			member = dict(userid=row[0], password=row[1], nickname=row[2])
+
+			if request.form['password'] != member['password']:
+				error = 'Invalid password'
+			else:
+				session['logged_in'] = True
+				session['logged_id'] = member['userid']
+				flash('You were logged in')
+				return render_template('show_entries.html', userid=member['userid'])
+				#return redirect(url_for('show_entries'))
 	return render_template('login.html', error=error)
 
 
