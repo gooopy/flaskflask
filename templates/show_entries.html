@@ -22,6 +22,10 @@
       <input type = 'hidden' name = 'id' value = '{{ entry.id }}'>
     	<input type='submit' value='modify'>
     </form>
+    <form action = "{{ url_for('delete_entry') }}" method=POST class=delete-entry>
+      <input type = 'hidden' name = 'id' value = '{{ entry.id }}'>
+      <input type = 'submit' value = 'delete'>
+    </form>
     
   {% else %}
     <li><em>Unbelievable.  No entries here so far</em>

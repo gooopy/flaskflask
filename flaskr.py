@@ -72,6 +72,15 @@ def modify_entry():
 	return render_template('modify.html', title=request.form['title'], text=request.form['text'], id=request.form['id'])
 
 
+@app.route('/delete_entry', methods = ['POST'])
+def delete_entry():
+	if not session.get('logged_in'):
+		abort(401)
+	g.db.execute('DELETE FROM entries WHERE id=?', [request.form['id']])
+	g.db.commit()
+	flash('This Entry was successfully deleted')
+	return redirect(url_for('show_entries'))
+
 
 @app.route('/login', methods = ['GET', 'POST'])
 def login():
