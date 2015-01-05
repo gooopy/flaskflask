@@ -15,6 +15,8 @@
   <ul class=entries>
   {% for entry in entries %}
     <li><h2>{{ entry.title }}</h2></li>
+    <a href="{{ url_for('delete_entry', entry_id=entry.id) }}">Delete</a>
+    <a href="{{ url_for('modify_entry', entry_id=entry.id) }}">Modify</a>
     <p>{{ entry.text|safe }}</p>
   {% else %}
     <li><em>Unbelievable.  No entries here so far</em>
