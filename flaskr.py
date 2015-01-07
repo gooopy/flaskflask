@@ -54,14 +54,14 @@ def teardown_request(exception):
 
 @app.route('/')
 def show_entries():
-	entries = query_db('select id, title, text from entries order by id desc')
+	entries = query_db('select id, title, text, writer from entries order by id desc')
 	return render_template('show_entries.html', entries=entries)
 
 @app.route('/add', methods = ['POST'])
 def add_entry():
 	if not session.get('logged_in'):
 		abort(401)
-	query_db('insert into entries (title, text) values (?, ?)', [request.form['title'], request.form['text']])
+	query_db('insert into entries (title, text, writer) values (?, ?, ?)', [request.form['title'], request.form['text'], request.form['writer']])
 	flash('New entry was successfully posted')
 	return redirect(url_for('show_entries'))
 
